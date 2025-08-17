@@ -1,11 +1,14 @@
+// MainActivity.kt
 package com.example.myapplication
 
 import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.myapplication.databinding.ActivityMainBinding
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,21 +24,24 @@ class MainActivity : AppCompatActivity() {
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
 
-        viewModel.uiState.observe(this) { state ->
-            when (state) {
-                is UiState.Loading -> {
-                    binding.progressBar.visibility = View.VISIBLE
-                    binding.textError.visibility = View.GONE
-                }
-                is UiState.Success -> {
-                    binding.progressBar.visibility = View.GONE
-                    binding.textError.visibility = View.GONE
-                    adapter.updateData(state.data)
-                }
-                is UiState.Error -> {
-                    binding.progressBar.visibility = View.GONE
-                    binding.textError.visibility = View.VISIBLE
-                    binding.textError.text = state.message
+        // StateFlow'u observe et
+        lifecycleScope.launch {
+            viewModel.uiState.collect { state ->
+                when (state) {
+                    is UiState.Loading -> {
+                        binding.progressBar.visibility = View.VISIBLE
+                        binding.textError.visibility = View.GONE
+                    }
+                    is UiState.Success -> {
+                        binding.progressBar.visibility = View.GONE
+                        binding.textError.visibility = View.GONE
+                        adapter.updateData(state.data)
+                    }
+                    is UiState.Error -> {
+                        binding.progressBar.visibility = View.GONE
+                        binding.textError.visibility = View.VISIBLE
+                        binding.textError.text = state.message
+                    }
                 }
             }
         }
