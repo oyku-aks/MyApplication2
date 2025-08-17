@@ -1,4 +1,3 @@
-// Repository.kt
 package com.example.myapplication
 
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +14,7 @@ class Repository {
 
     init {
         val retrofit = Retrofit.Builder()
-            .baseUrl("https://jsonplaceholder.typicode.com/") // mevcut baseUrl yapınla uyumlu
+            .baseUrl("https://jsonplaceholder.typicode.com/") // same as before
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         api = retrofit.create(ApiService::class.java)
@@ -23,26 +22,24 @@ class Repository {
 
     suspend fun getUsers(): List<User> = withContext(Dispatchers.IO) {
         try {
-            // ApiService.getUsers(): suspend çağrı (mevcut yapın)
             api.getUsers()
         } catch (e: Exception) {
-            // Tüm istisnaları tek noktada kullanıcı-dostu mesaja map et
             throw Exception(mapToUserMessage(e))
         }
     }
 
     private fun mapToUserMessage(e: Exception): String = when (e) {
-        is UnknownHostException -> "İnternet bağlantısı yok ya da sunucuya ulaşılamıyor"
-        is SocketTimeoutException -> "İstek zaman aşımına uğradı, lütfen tekrar deneyin"
-        is IOException -> "Ağ hatası oluştu, bağlantınızı kontrol edin"
+        is UnknownHostException -> "No internet connection or server unreachable"
+        is SocketTimeoutException -> "Request timed out, please try again"
+        is IOException -> "Network error, please check your connection"
         is HttpException -> when (e.code()) {
-            400 -> "Geçersiz istek (400)"
-            401 -> "Yetkisiz erişim (401)"
-            403 -> "Erişim engellendi (403)"
-            404 -> "İçerik bulunamadı (404)"
-            500 -> "Sunucu hatası (500)"
-            else -> "HTTP hatası: ${e.code()}"
+            400 -> "Bad request (400)"
+            401 -> "Unauthorized (401)"
+            403 -> "Forbidden (403)"
+            404 -> "Not found (404)"
+            500 -> "Internal server error (500)"
+            else -> "HTTP error: ${e.code()}"
         }
-        else -> "Bilinmeyen bir hata oluştu"
+        else -> "An unexpected error occurred"
     }
 }

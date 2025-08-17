@@ -1,4 +1,3 @@
-// MainViewModel.kt
 package com.example.myapplication
 
 import androidx.lifecycle.ViewModel
@@ -16,7 +15,6 @@ sealed class UiState {
 class MainViewModel : ViewModel() {
     private val repository = Repository()
 
-    // Başlangıç değeri zorunlu → Loading seçtik
     private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
     val uiState: StateFlow<UiState> = _uiState
 
@@ -27,7 +25,7 @@ class MainViewModel : ViewModel() {
                 val users = repository.getUsers()
                 _uiState.value = UiState.Success(users)
             } catch (e: Exception) {
-                _uiState.value = UiState.Error(e.message ?: "Bilinmeyen hata")
+                _uiState.value = UiState.Error(e.message ?: "Unknown error")
             }
         }
     }
