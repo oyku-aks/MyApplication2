@@ -1,50 +1,73 @@
-// MainActivity.kt
 package com.example.myapplication
 
 import android.os.Bundle
 import android.view.View
+import android.widget.ProgressBar
+import android.widget.TextView
+import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.myapplication.databinding.ActivityMainBinding
+import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
-    private lateinit var binding: ActivityMainBinding
-    private val viewModel: MainViewModel by viewModels()
-    private val adapter = UserAdapter()
+    private val viewModel: MainViewModel by viewModels {
+        MainViewModelFactory(Repository())
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        binding = ActivityMainBinding.inflate(layoutInflater)
-        setContentView(binding.root)
+        setContentView(R.layout.activity_main)
 
-        binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        binding.recyclerView.adapter = adapter
+        val recyclerView = findViewById<RecyclerView>(R.id.recyclerView)
+        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
+        val textError = findViewById<TextView>(R.id.textError)
 
-        // StateFlow'u observe et
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
+
+        val adapter = UserAdapter { user ->
+            viewModel.selectUser(user)
+        }
+        recyclerView.adapter = adapter
+
+
         lifecycleScope.launch {
-            viewModel.uiState.collect { state ->
+            viewModel.uiState.collectLatest { state ->
                 when (state) {
                     is UiState.Loading -> {
-                        binding.progressBar.visibility = View.VISIBLE
-                        binding.textError.visibility = View.GONE
+                        progressBar.visibility = View.VISIBLE
+                        recyclerView.visibility = View.GONE
+                        textError.visibility = View.GONE
                     }
                     is UiState.Success -> {
-                        binding.progressBar.visibility = View.GONE
-                        binding.textError.visibility = View.GONE
-                        adapter.updateData(state.data)
+                        progressBar.visibility = View.GONE
+                        recyclerView.visibility = View.VISIBLE
+                        textError.visibility = View.GONE
+                        adapter.submitList(state.users)
                     }
                     is UiState.Error -> {
-                        binding.progressBar.visibility = View.GONE
-                        binding.textError.visibility = View.VISIBLE
-                        binding.textError.text = state.message
+                        progressBar.visibility = View.GONE
+                        recyclerView.visibility = View.GONE
+                        textError.visibility = View.VISIBLE
+                        textError.text = state.message
                     }
                 }
             }
         }
+
+
+        lifecycleScope.launch {
+            viewModel.selectedUser.collectLatest { user ->
+                if (user != null) {
+
+                }
+            }
+        }
+
 
         viewModel.fetchUsers()
     }

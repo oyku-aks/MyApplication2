@@ -1,45 +1,45 @@
 package com.example.myapplication
 
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.io.IOException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 
 class Repository {
-    private val api: ApiService
 
-    init {
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://jsonplaceholder.typicode.com/") // same as before
+    companion object {
+        private const val TAG = "Repository"
+        private const val BASE_URL = "https://jsonplaceholder.typicode.com/"
+    }
+
+
+    private val api: ApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-        api = retrofit.create(ApiService::class.java)
+            .create(ApiService::class.java)
     }
 
-    suspend fun getUsers(): List<User> = withContext(Dispatchers.IO) {
+    suspend fun getUsers(): Result<List<User>> = withContext(Dispatchers.IO) {
         try {
-            api.getUsers()
-        } catch (e: Exception) {
-            throw Exception(mapToUserMessage(e))
-        }
-    }
+            Log.d(TAG, "Request -> GET ${BASE_URL}users")
+            val response = api.getUsers()
 
-    private fun mapToUserMessage(e: Exception): String = when (e) {
-        is UnknownHostException -> "No internet connection or server unreachable"
-        is SocketTimeoutException -> "Request timed out, please try again"
-        is IOException -> "Network error, please check your connection"
-        is HttpException -> when (e.code()) {
-            400 -> "Bad request (400)"
-            401 -> "Unauthorized (401)"
-            403 -> "Forbidden (403)"
-            404 -> "Not found (404)"
-            500 -> "Internal server error (500)"
-            else -> "HTTP error: ${e.code()}"
+            Log.d(TAG, "Response <- isSuccessful=${response.isSuccessful}, code=${response.code()}")
+            if (response.isSuccessful) {
+                val users = response.body().orEmpty()
+                Log.d(TAG, "Parsed users size = ${users.size}")
+                Result.success(users)
+            } else {
+                val msg = "HTTP ${response.code()} - ${response.message()}"
+                Log.e(TAG, "Failure: $msg")
+                Result.failure(Exception(msg))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception: ${e.message}", e)
+            Result.failure(e)
         }
-        else -> "An unexpected error occurred"
     }
 }
