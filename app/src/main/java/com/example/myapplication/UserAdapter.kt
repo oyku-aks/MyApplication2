@@ -1,61 +1,51 @@
 package com.example.myapplication
 
+import android.graphics.Color
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.example.myapplication.databinding.ItemUserBinding
 
 class UserAdapter(
     private val onItemClick: (User) -> Unit
-) : ListAdapter<User, UserAdapter.UserViewHolder>(DiffCallback) {
-
+) : ListAdapter<User, UserAdapter.UserViewHolder>(DiffCallback()) {
 
     private var selectedUserId: Int? = null
 
-    inner class UserViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val textViewName: TextView = itemView.findViewById(R.id.textViewName)
-        private val textViewEmail: TextView = itemView.findViewById(R.id.textViewEmail)
+    inner class UserViewHolder(private val binding: ItemUserBinding) :
+        RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(user: User, isSelected: Boolean) {
-            textViewName.text = user.name
-            textViewEmail.text = user.email
+        fun bind(user: User) {
+            binding.textName.text = user.name
+            binding.textEmail.text = user.email
 
+            // Seçili kullanıcıyı farklı renkle göster
+            if (user.id == selectedUserId) {
+                binding.root.setBackgroundColor(Color.parseColor("#E0F7FA")) // Açık mavi
+            } else {
+                binding.root.setBackgroundColor(Color.WHITE)
+            }
 
-            itemView.setBackgroundColor(
-                if (isSelected) 0xFFE0E0E0.toInt() else 0xFFFFFFFF.toInt()
-            )
-
-            itemView.setOnClickListener {
-                // Önce eski seçimi sıfırla
-                val oldSelected = selectedUserId
+            binding.root.setOnClickListener {
                 selectedUserId = user.id
-
-                notifyItemChanged(bindingAdapterPosition)
-                oldSelected?.let { oldId ->
-                    val oldIndex = currentList.indexOfFirst { it.id == oldId }
-                    if (oldIndex != -1) notifyItemChanged(oldIndex)
-                }
-
+                notifyDataSetChanged() // Tüm listeyi refresh et
                 onItemClick(user)
             }
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_user, parent, false)
-        return UserViewHolder(view)
+        val binding = ItemUserBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return UserViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
-        val user = getItem(position)
-        holder.bind(user, user.id == selectedUserId)
+        holder.bind(getItem(position))
     }
 
-    companion object DiffCallback : DiffUtil.ItemCallback<User>() {
+    class DiffCallback : DiffUtil.ItemCallback<User>() {
         override fun areItemsTheSame(oldItem: User, newItem: User): Boolean =
             oldItem.id == newItem.id
 
