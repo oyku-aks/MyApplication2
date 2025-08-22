@@ -23,12 +23,12 @@ class MainActivity : ComponentActivity() {
         setContentView(binding.root)
 
         val adapter = UserAdapter { user ->
-            binding.textSelectedUser.visibility = View.VISIBLE
-            binding.textSelectedUser.text = "Selected: ${user.name}"
-        }
 
+            viewModel.selectUser(user)
+        }
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
+
 
         lifecycleScope.launch {
             viewModel.uiState.collectLatest { state ->
@@ -48,6 +48,15 @@ class MainActivity : ComponentActivity() {
                         binding.textError.text = state.message
                     }
                 }
+            }
+        }
+
+
+        lifecycleScope.launch {
+            viewModel.selectedUser.collectLatest { u ->
+                binding.textSelectedUser.visibility = View.VISIBLE
+                binding.textSelectedUser.text =
+                    u?.let { "Selected: ${it.name}" } ?: "No user selected"
             }
         }
 

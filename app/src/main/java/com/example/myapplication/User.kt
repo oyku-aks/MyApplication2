@@ -3,6 +3,9 @@ package com.example.myapplication
 data class User(
     val id: Int,
     val name: String,
-    val email: String
+    val email: String,
+    val isSelected: Boolean = false
 )
+
+
 

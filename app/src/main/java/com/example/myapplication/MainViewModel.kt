@@ -25,14 +25,24 @@ class MainViewModel(private val repository: Repository) : ViewModel() {
             _uiState.value = UiState.Loading
             val result = repository.getUsers()
             result
-                .onSuccess { users -> _uiState.value = UiState.Success(users) }
-                .onFailure { error ->
-                    _uiState.value = UiState.Error(error.message ?: "Unknown error")
+                .onSuccess { users ->
+                    _uiState.value = UiState.Success(users.map { it.copy(isSelected = false) })
+                }
+                .onFailure { e ->
+                    _uiState.value = UiState.Error(e.message ?: "Unknown error")
                 }
         }
     }
 
-    fun selectUser(user: User) {
-        _selectedUser.value = user
+
+    fun selectUser(selected: User) {
+        val state = _uiState.value as? UiState.Success ?: return
+        val updated = state.users.map { u ->
+
+
+            u.copy(isSelected = (u.id == selected.id))
+        }
+        _uiState.value = UiState.Success(updated)
+        _selectedUser.value = updated.firstOrNull { it.isSelected }
     }
 }

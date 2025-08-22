@@ -12,32 +12,38 @@ class UserAdapter(
     private val onItemClick: (User) -> Unit
 ) : ListAdapter<User, UserAdapter.UserViewHolder>(DiffCallback()) {
 
-    private var selectedUserId: Int? = null
-
     inner class UserViewHolder(private val binding: ItemUserBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(user: User) {
-            binding.textName.text = user.name
-            binding.textEmail.text = user.email
+        fun bind(boundUser: User) {
+            
+            binding.textName.text = boundUser.name
+            binding.textEmail.text = boundUser.email
 
-            // Seçili kullanıcıyı farklı renkle göster
-            if (user.id == selectedUserId) {
-                binding.root.setBackgroundColor(Color.parseColor("#E0F7FA")) // Açık mavi
-            } else {
-                binding.root.setBackgroundColor(Color.WHITE)
-            }
+
+            val highlight = Color.parseColor("#BBDEFB")
+            val normal = Color.WHITE
+            binding.cardContainer.setCardBackgroundColor(
+                if (boundUser.isSelected) highlight else normal
+            )
+
 
             binding.root.setOnClickListener {
-                selectedUserId = user.id
-                notifyDataSetChanged() // Tüm listeyi refresh et
-                onItemClick(user)
+                val pos = bindingAdapterPosition
+                if (pos == RecyclerView.NO_POSITION) return@setOnClickListener
+
+                val clicked = getItem(pos)
+                if (clicked.id == boundUser.id) {
+                    onItemClick(clicked)
+                }
             }
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserViewHolder {
-        val binding = ItemUserBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding = ItemUserBinding.inflate(
+            LayoutInflater.from(parent.context), parent, false
+        )
         return UserViewHolder(binding)
     }
 
@@ -46,10 +52,7 @@ class UserAdapter(
     }
 
     class DiffCallback : DiffUtil.ItemCallback<User>() {
-        override fun areItemsTheSame(oldItem: User, newItem: User): Boolean =
-            oldItem.id == newItem.id
-
-        override fun areContentsTheSame(oldItem: User, newItem: User): Boolean =
-            oldItem == newItem
+        override fun areItemsTheSame(oldItem: User, newItem: User) = oldItem.id == newItem.id
+        override fun areContentsTheSame(oldItem: User, newItem: User) = oldItem == newItem
     }
 }
